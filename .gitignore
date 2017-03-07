@@ -1,0 +1,12 @@
+*.iml
+*.iws
+.gradle
+/local.properties
+/.idea/workspace.xml
+/.idea/vcs.xml
+/.idea/libraries
+.DS_Store
+/build
+/dist
+/captures
+.externalNativeBuild
