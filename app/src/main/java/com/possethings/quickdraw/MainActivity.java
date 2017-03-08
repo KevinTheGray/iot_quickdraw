@@ -13,8 +13,9 @@ import java.io.IOException;
 public class MainActivity extends AppCompatActivity {
 	private static final String TAG = "MainActivity";
 	private static final String START_BUTTON_PIN_NAME = "BCM21";
+	private Gpio mGPIOStartButton;
+	private long lastButtonPress = 0;
 
-	private Gpio mStartGPIOButton;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -22,26 +23,30 @@ public class MainActivity extends AppCompatActivity {
 
 		PeripheralManagerService service = new PeripheralManagerService();
 		try {
-			// Step 1. Create GPIO connection.
-			mStartGPIOButton = service.openGpio(START_BUTTON_PIN_NAME);
-			// Step 2. Configure as an input.
-			mStartGPIOButton.setDirection(Gpio.DIRECTION_IN);
-			// Step 3. Enable edge trigger events.
-			mStartGPIOButton.setEdgeTriggerType(Gpio.EDGE_FALLING);
-			// Step 4. Register an event callback.
-			mStartGPIOButton.registerGpioCallback(mCallback);
+			// Set up the start button
+			mGPIOStartButton = service.openGpio(START_BUTTON_PIN_NAME);
+			mGPIOStartButton.setDirection(Gpio.DIRECTION_IN);
+			mGPIOStartButton.setEdgeTriggerType(Gpio.EDGE_FALLING);
+			mGPIOStartButton.registerGpioCallback(mCallback);
 		} catch (IOException e) {
 			Log.e(TAG, "Error on PeripheralIO API", e);
 		}
 	}
 
-	// Step 4. Register an event callback.
 	private GpioCallback mCallback = new GpioCallback() {
 		@Override
 		public boolean onGpioEdge(Gpio gpio) {
-			Log.i(TAG, "Start the game!");
-
-			// Step 5. Return true to keep callback active.
+			
+			if (System.currentTimeMillis() - lastButtonPress > 200) {
+				lastButtonPress = System.currentTimeMillis();
+				Log.i(TAG, "Start the game!");
+				BuzzerManager buzzerManager = BuzzerManager.getInstance();
+				if (buzzerManager.isPlaying()) {
+					buzzerManager.stop();
+				} else {
+					buzzerManager.play();
+				}
+			}
 			return true;
 		}
 	};
@@ -51,10 +56,10 @@ public class MainActivity extends AppCompatActivity {
 		super.onDestroy();
 
 		// Step 6. Close the resource
-		if (mStartGPIOButton != null) {
-			mStartGPIOButton.unregisterGpioCallback(mCallback);
+		if (mGPIOStartButton != null) {
+			mGPIOStartButton.unregisterGpioCallback(mCallback);
 			try {
-				mStartGPIOButton.close();
+				mGPIOStartButton.close();
 			} catch (IOException e) {
 				Log.e(TAG, "Error on PeripheralIO API", e);
 			}
