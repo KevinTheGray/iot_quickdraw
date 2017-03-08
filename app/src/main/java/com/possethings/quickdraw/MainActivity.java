@@ -11,10 +11,10 @@ import com.google.android.things.pio.PeripheralManagerService;
 import java.io.IOException;
 
 public class MainActivity extends AppCompatActivity {
-	private static final String TAG = "ButtonActivity";
-	private static final String GPIO_PIN_NAME = "BCM21";
+	private static final String TAG = "MainActivity";
+	private static final String START_BUTTON_PIN_NAME = "BCM21";
 
-	private Gpio mButtonGpio;
+	private Gpio mStartGPIOButton;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -23,13 +23,13 @@ public class MainActivity extends AppCompatActivity {
 		PeripheralManagerService service = new PeripheralManagerService();
 		try {
 			// Step 1. Create GPIO connection.
-			mButtonGpio = service.openGpio(GPIO_PIN_NAME);
+			mStartGPIOButton = service.openGpio(START_BUTTON_PIN_NAME);
 			// Step 2. Configure as an input.
-			mButtonGpio.setDirection(Gpio.DIRECTION_IN);
+			mStartGPIOButton.setDirection(Gpio.DIRECTION_IN);
 			// Step 3. Enable edge trigger events.
-			mButtonGpio.setEdgeTriggerType(Gpio.EDGE_FALLING);
+			mStartGPIOButton.setEdgeTriggerType(Gpio.EDGE_FALLING);
 			// Step 4. Register an event callback.
-			mButtonGpio.registerGpioCallback(mCallback);
+			mStartGPIOButton.registerGpioCallback(mCallback);
 		} catch (IOException e) {
 			Log.e(TAG, "Error on PeripheralIO API", e);
 		}
@@ -39,7 +39,7 @@ public class MainActivity extends AppCompatActivity {
 	private GpioCallback mCallback = new GpioCallback() {
 		@Override
 		public boolean onGpioEdge(Gpio gpio) {
-			Log.i(TAG, "GPIO changed, button pressed");
+			Log.i(TAG, "Start the game!");
 
 			// Step 5. Return true to keep callback active.
 			return true;
@@ -51,10 +51,10 @@ public class MainActivity extends AppCompatActivity {
 		super.onDestroy();
 
 		// Step 6. Close the resource
-		if (mButtonGpio != null) {
-			mButtonGpio.unregisterGpioCallback(mCallback);
+		if (mStartGPIOButton != null) {
+			mStartGPIOButton.unregisterGpioCallback(mCallback);
 			try {
-				mButtonGpio.close();
+				mStartGPIOButton.close();
 			} catch (IOException e) {
 				Log.e(TAG, "Error on PeripheralIO API", e);
 			}
