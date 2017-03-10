@@ -6,6 +6,9 @@ import com.google.android.things.pio.PeripheralManagerService;
 import com.google.android.things.pio.Pwm;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import static android.content.ContentValues.TAG;
 
@@ -16,8 +19,9 @@ class BuzzerManager {
 
 	private Pwm mPWMBuzzer;
 	private boolean isPlaying = false;
+	Timer tuneTimer = new Timer();
 
-	public static BuzzerManager getInstance() {
+	static BuzzerManager getInstance() {
 		if (instance == null) {
 			instance = new BuzzerManager();
 		}
@@ -35,10 +39,43 @@ class BuzzerManager {
 		}
 	}
 
-	public void play() {
+	void playTune(List<BuzzerNote> tune) {
 		try {
-			mPWMBuzzer.setPwmFrequencyHz(500);
-			mPWMBuzzer.setPwmDutyCycle(5);
+			mPWMBuzzer.setEnabled(true);
+		} catch (IOException e) {
+			Log.e(TAG, "Error on PeripheralIO API", e);
+			return;
+		}
+		isPlaying = true;
+		playTuneNote(tune, 0);
+	}
+
+	private void playTuneNote(final List<BuzzerNote> tune, final int noteIndex) {
+		try {
+			if (noteIndex >= tune.size()) {
+				mPWMBuzzer.setEnabled(false);
+				return;
+			}
+
+			BuzzerNote buzzerNote = tune.get(noteIndex);
+			mPWMBuzzer.setPwmFrequencyHz(buzzerNote.getFrequency());
+			mPWMBuzzer.setPwmDutyCycle(buzzerNote.getVolume());
+
+			tuneTimer.schedule(new TimerTask() {
+				@Override
+				public void run() {
+					playTuneNote(tune, noteIndex + 1);
+				}
+			}, buzzerNote.getDuration());
+		} catch (IOException e) {
+			Log.e(TAG, "Error on PeripheralIO API", e);
+		}
+	}
+
+	void play() {
+		try {
+			mPWMBuzzer.setPwmFrequencyHz(1319);
+			mPWMBuzzer.setPwmDutyCycle(50);
 			mPWMBuzzer.setEnabled(true);
 			isPlaying = true;
 		} catch (IOException e) {
@@ -46,7 +83,7 @@ class BuzzerManager {
 		}
 	}
 
-	public void stop() {
+	void stop() {
 		try {
 			mPWMBuzzer.setEnabled(false);
 			isPlaying = false;
@@ -55,7 +92,7 @@ class BuzzerManager {
 		}
 	}
 
-	public boolean isPlaying() {
+	boolean isPlaying() {
 		return isPlaying;
 	}
 }

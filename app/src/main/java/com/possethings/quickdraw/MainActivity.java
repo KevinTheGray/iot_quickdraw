@@ -9,6 +9,7 @@ import com.google.android.things.pio.GpioCallback;
 import com.google.android.things.pio.PeripheralManagerService;
 
 import java.io.IOException;
+import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
 	private static final String TAG = "MainActivity";
@@ -20,6 +21,8 @@ public class MainActivity extends AppCompatActivity {
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+
+		setContentView(R.layout.activity_main);
 
 		PeripheralManagerService service = new PeripheralManagerService();
 		try {
@@ -36,16 +39,23 @@ public class MainActivity extends AppCompatActivity {
 	private GpioCallback mCallback = new GpioCallback() {
 		@Override
 		public boolean onGpioEdge(Gpio gpio) {
-			
+
 			if (System.currentTimeMillis() - lastButtonPress > 200) {
 				lastButtonPress = System.currentTimeMillis();
 				Log.i(TAG, "Start the game!");
 				BuzzerManager buzzerManager = BuzzerManager.getInstance();
-				if (buzzerManager.isPlaying()) {
-					buzzerManager.stop();
-				} else {
-					buzzerManager.play();
-				}
+				ArrayList<BuzzerNote> tune = new ArrayList<>();
+				long barDuration = 1600;
+				double volume = 50;
+				tune.add(new BuzzerNote(1319, barDuration/16, volume));
+				tune.add(new BuzzerNote(1760, barDuration/16, volume));
+				tune.add(new BuzzerNote(1319, barDuration/16, volume));
+				tune.add(new BuzzerNote(1760, barDuration/16, volume));
+				tune.add(new BuzzerNote(1319, barDuration/2, volume));
+				tune.add(new BuzzerNote(1047, barDuration/4, volume));
+				tune.add(new BuzzerNote(1175, barDuration/4, volume));
+				tune.add(new BuzzerNote(880, barDuration/2, volume));
+				buzzerManager.playTune(tune);
 			}
 			return true;
 		}
